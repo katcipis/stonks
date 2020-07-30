@@ -30,7 +30,8 @@ You can expect a JSON like this:
 
 All JSON fields documented as part of request/response bodies are
 to be considered obligatory, unless they are explicitly
-documented as optional.
+documented as optional. Also all fields of type **<string>** are
+expected to be non-empty by default, unless stated otherwise.
 
 
 # Error Handling
@@ -80,7 +81,9 @@ With the following request body:
 }
 ```
 
-In case of success you will receive the following response:
+Where **email** must be a valid email address from a previously created user.
+
+In case of success you can expect an status code 201 and the following response:
 
 ```
 {
@@ -129,7 +132,21 @@ With the following request body:
 }
 ```
 
-In the case of success you can use the newly created user to sign in.
+Multiple users with the same **email** is forbidden, so the given
+**email** must not belong to an user already registered
+in the system. The **fullname** is the full name of the user and
+does not need to be unique.
+
+In the case of success you can expect a status code 201 and the response:
+
+```
+{
+    "id" : <string>
+}
+```
+
+Where the **id** field is the ID of the created user.
+You can use the newly created user to sign in.
 
 
 # Listing Users
@@ -142,7 +159,8 @@ To list all users send the authenticated request:
 GET /v1/users
 ```
 
-And as a response you can expect a list with all the users:
+In the case of success you can expect an status code 200
+and a list with all the users:
 
 ```
 [
