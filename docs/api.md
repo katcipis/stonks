@@ -130,6 +130,8 @@ In the case of success you can use the newly created user to sign in.
 
 # Listing Users
 
+Only administrators are allowed to list all users.
+
 To list all users send the authenticated request:
 
 ```
@@ -154,7 +156,3 @@ And as a response you can expect a list with all the users:
 ```
 
 Ordered by the field **id** in descending order.
-Only administrators are allowed to list all users.
-
-
-# Deleting User
