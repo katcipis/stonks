@@ -5,8 +5,8 @@ architectural style. It has resource-oriented
 URLs and uses [JSON](https://www.json.org/) as the representation for resources.
 It uses standard HTTP response codes, authentication, and verbs.
 
-Resource URL's are documented using URI templates, as defined following
-the [RFC 6570](https://tools.ietf.org/html/rfc6570).
+Resource URL's are documented using URI templates (when necessary),
+as defined following the [RFC 6570](https://tools.ietf.org/html/rfc6570).
 
 JSON request/responses are documented by listing the fields and
 the expected type for that field (along with an optional annotation
@@ -48,6 +48,10 @@ It follows this schema:
     }
 }
 ```
+
+The **message** is intended for human inspection, no programmatic decision
+should be made using their contents (code should handle them as opaque strings).
+
 
 # Authentication
 
