@@ -47,6 +47,15 @@ And for integration tests:
 make test-integration
 ```
 
+To check locally the coverage from all the tests run:
+
+```
+make coverage
+```
+
+And it should open the coverage analysis in your browser.
+
+
 ## Linting
 
 To lint code, just run:
