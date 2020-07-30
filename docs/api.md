@@ -35,7 +35,7 @@ documented as optional.
 
 # Error Handling
 
-When an error occurs you can expect an HTTP status code indicating the
+When an error occurs you can always expect an HTTP status code indicating the
 nature of the failure and also a response body with an error message
 giving some more information on what went wrong (when appropriate).
 
@@ -67,7 +67,7 @@ To sign in send the following request:
 POST /v1/auth/signin
 ```
 
-With the **email** and **password** in the request body following the schema:
+With the following request body:
 
 ```
 {
@@ -86,7 +86,8 @@ In case of success you will receive the following response:
 }
 ```
 
-Where **token_type** is always "bearer" and the **access_token**
+Where **token_type** indicates the type of the token (for now the API only
+supports tokens of type "bearer") and the **access_token**
 contains the token itself that you will use for authentication
 on further requests.
 
@@ -106,8 +107,54 @@ In case of a success the bearer token used to authenticate the request
 will become invalid and can't be used any further.
 
 
-# Creating User
+# Creating a new user
+
+To create a new user send the request:
+
+```
+POST /v1/users
+```
+
+With the following request body:
+
+```
+{
+    "fullname" : <string>,
+    "email" : <string>,
+    "password" : <string>
+}
+```
+
+In the case of success you can use the newly created user to sign in.
+
 
 # Listing Users
+
+To list all users send the authenticated request:
+
+```
+GET /v1/users
+```
+
+And as a response you can expect a list with all the users:
+
+```
+[
+    {
+        "id" : <string>,
+        "fullname" : <string>,
+        "email" : <string>
+    },
+    {
+        "id" : <string>,
+        "fullname" : <string>,
+        "email" : <string>
+    }
+]
+```
+
+Ordered by the field **id** in descending order.
+Only administrators are allowed to list all users.
+
 
 # Deleting User
