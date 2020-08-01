@@ -2,8 +2,10 @@ package manager_test
 
 import (
 	"errors"
+	"strconv"
 	"testing"
 
+	"github.com/katcipis/stonks/auth"
 	"github.com/katcipis/stonks/users"
 	"github.com/katcipis/stonks/users/manager"
 )
@@ -30,10 +32,15 @@ func TestUserCreation(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			storage := newUsersStorage()
-			usersManager := manager.New(storage)
+			authorizer := auth.New()
+			usersManager := manager.New(authorizer, storage)
 			userID, err := usersManager.CreateUser(test.userEmail, test.userName, test.userPassword)
-			if !errors.Is(test.wantErr, err) {
-				t.Fatalf("got err [%v] but want err[%v]", err, test.wantErr)
+
+			if test.wantErr != nil {
+				if !errors.Is(test.wantErr, err) {
+					t.Fatalf("got err [%v] but want err[%v]", err, test.wantErr)
+				}
+				return
 			}
 
 			gotUser, ok := storage.userByID(userID)
@@ -41,15 +48,16 @@ func TestUserCreation(t *testing.T) {
 				t.Fatalf("unable to find user id %q on storage", userID)
 			}
 
-			wantUser := User{
-				id:       userID,
-				name:     test.userName,
-				password: test.userPassword,
-				email:    test.userEmail,
+			if gotUser.fullname != test.userName {
+				t.Errorf("got name %q want %q", gotUser.fullname, test.userName)
 			}
 
-			if gotUser != wantUser {
-				t.Fatalf("got user[%+v] != wanted [%+v]", gotUser, wantUser)
+			if gotUser.email != test.userEmail {
+				t.Errorf("got email %q want %q", gotUser.email, test.userEmail)
+			}
+
+			if !authorizer.HashMatchesPassword(gotUser.hashedPassword, test.userPassword) {
+				t.Errorf("got hashed password %q that doesn't match password %q", gotUser.hashedPassword, test.userPassword)
 			}
 		})
 	}
@@ -57,14 +65,16 @@ func TestUserCreation(t *testing.T) {
 
 // UsersStorage is a simple in memory user storage implementation used in tests
 type UsersStorage struct {
+	idCount int
+	users   map[string]User
 }
 
 // User is a user representation specific for test purposes
 type User struct {
-	id       string
-	name     string
-	password string
-	email    users.Email
+	id             string
+	fullname       string
+	hashedPassword string
+	email          users.Email
 }
 
 func newUsersStorage() *UsersStorage {
@@ -78,9 +88,34 @@ func newUsersStorage() *UsersStorage {
 	// coupling tests too much on code structure (mocks can be a source of that):
 	//
 	// - https://medium.com/@kentbeck_7670/programmer-test-principles-d01c064d7934
-	return &UsersStorage{}
+	return &UsersStorage{
+		users: map[string]User{},
+	}
+}
+
+func (s *UsersStorage) AddUser(email users.Email, fullname string, pass string) (string, error) {
+	s.idCount++
+	id := strconv.Itoa(s.idCount)
+	s.users[id] = User{
+		id:             id,
+		fullname:       fullname,
+		hashedPassword: pass,
+		email:          email,
+	}
+	return id, nil
 }
 
 func (s *UsersStorage) userByID(id string) (User, bool) {
-	return User{}, false
+	v, ok := s.users[id]
+	return v, ok
+}
+
+func hashedPassword(t *testing.T, a *auth.Authorizer, pass string) string {
+	t.Helper()
+
+	hashed, err := a.PasswordHash(pass)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return hashed
 }
