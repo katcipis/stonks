@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/katcipis/stonks/users"
 	"github.com/katcipis/stonks/users/manager"
 )
 
@@ -11,7 +12,7 @@ func TestUserCreation(t *testing.T) {
 
 	type Test struct {
 		name         string
-		userEmail    manager.Email
+		userEmail    users.Email
 		userName     string
 		userPassword string
 		wantErr      error
@@ -63,7 +64,7 @@ type User struct {
 	id       string
 	name     string
 	password string
-	email    manager.Email
+	email    users.Email
 }
 
 func newUsersStorage() *UsersStorage {
