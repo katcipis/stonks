@@ -2,7 +2,11 @@
 // Handling operations like creation, listing and deletion safely.
 package manager
 
-import "github.com/katcipis/stonks/users"
+import (
+	"fmt"
+
+	"github.com/katcipis/stonks/users"
+)
 
 // UsersStore is responsible for storing and retrieving user information
 type UsersStore interface {
@@ -53,6 +57,9 @@ func New(a Authorizer, s UsersStore) *Manager {
 //
 // All other errors are to be considered internal errors.
 func (m *Manager) CreateUser(email users.Email, fullname string, password string) (string, error) {
+	if fullname == "" {
+		return "", fmt.Errorf("%w:empty name", users.InvalidUserParamErr)
+	}
 	hashed, _ := m.auth.PasswordHash(password)
 	// TODO handle password hash generation failures
 	return m.store.AddUser(email, fullname, hashed)

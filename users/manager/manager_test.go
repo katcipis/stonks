@@ -27,6 +27,19 @@ func TestUserCreation(t *testing.T) {
 			userName:     "User Name",
 			userPassword: "Some Password",
 		},
+		{
+			name:         "SuccessForAdminUser",
+			userEmail:    "user@test.com",
+			userName:     "Admin User Has Domain test.com",
+			userPassword: "admin password",
+		},
+		{
+			name:         "FailureOnEmptyUserName",
+			userName:     "",
+			userEmail:    "user@test.com",
+			userPassword: "admin password",
+			wantErr:      users.InvalidUserParamErr,
+		},
 	}
 
 	for _, test := range tests {
@@ -37,7 +50,7 @@ func TestUserCreation(t *testing.T) {
 			userID, err := usersManager.CreateUser(test.userEmail, test.userName, test.userPassword)
 
 			if test.wantErr != nil {
-				if !errors.Is(test.wantErr, err) {
+				if !errors.Is(err, test.wantErr) {
 					t.Fatalf("got err [%v] but want err[%v]", err, test.wantErr)
 				}
 				return
