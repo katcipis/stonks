@@ -173,13 +173,3 @@ func parseEmail(t *testing.T, email string) users.Email {
 
 	return s
 }
-
-func hashedPassword(t *testing.T, a *auth.Authorizer, pass string) string {
-	t.Helper()
-
-	hashed, err := a.PasswordHash(pass)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return hashed
-}
