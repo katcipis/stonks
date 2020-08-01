@@ -25,7 +25,9 @@ jobs:
 
     # TODO: add build
 
-    # Usually I like running make 
+    # Usually I like running make but running docker inside
+    # github actions seems to be more annoying than I have time
+    # right now to fix =P (or I just missed something simple)
     - name: Test
       run: go test -race ./...
 
@@ -56,4 +58,4 @@ jobs:
     - name: Lint
       run: |
         export PATH="$PATH:/tmp/bin"
-        make lint
+        golangci-lint run ./...
