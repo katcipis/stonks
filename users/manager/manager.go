@@ -56,14 +56,21 @@ func New(a Authorizer, s UsersStore) *Manager {
 // - If any the user already exists: users.UserAlreadyExistsErr
 //
 // All other errors are to be considered internal errors.
-func (m *Manager) CreateUser(email users.Email, fullname string, password string) (string, error) {
+func (m *Manager) CreateUser(email string, fullname string, password string) (string, error) {
 	if fullname == "" {
 		return "", fmt.Errorf("%w:empty name", users.InvalidUserParamErr)
 	}
 	if password == "" {
 		return "", fmt.Errorf("%w:empty password", users.InvalidUserParamErr)
 	}
-	hashed, _ := m.auth.PasswordHash(password)
-	// TODO handle password hash generation failures
-	return m.store.AddUser(email, fullname, hashed)
+	validEmail, err := users.ParseEmail(email)
+	if err != nil {
+		return "", fmt.Errorf("%w:invalid email:%v", users.InvalidUserParamErr, err)
+	}
+
+	hashed, err := m.auth.PasswordHash(password)
+	if err != nil {
+		return "", fmt.Errorf("error creating password hash:%v", err)
+	}
+	return m.store.AddUser(validEmail, fullname, hashed)
 }

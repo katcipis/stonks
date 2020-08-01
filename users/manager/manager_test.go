@@ -14,7 +14,7 @@ func TestUserCreation(t *testing.T) {
 
 	type Test struct {
 		name         string
-		userEmail    users.Email
+		userEmail    string
 		userName     string
 		userPassword string
 		wantErr      error
@@ -47,6 +47,20 @@ func TestUserCreation(t *testing.T) {
 			userPassword: "",
 			wantErr:      users.InvalidUserParamErr,
 		},
+		{
+			name:         "FailureOnEmptyEmail",
+			userName:     "Name",
+			userEmail:    "",
+			userPassword: "password",
+			wantErr:      users.InvalidUserParamErr,
+		},
+		{
+			name:         "FailureOnInvalidEmail",
+			userName:     "Name",
+			userEmail:    "invalidemail",
+			userPassword: "password",
+			wantErr:      users.InvalidUserParamErr,
+		},
 	}
 
 	for _, test := range tests {
@@ -72,14 +86,23 @@ func TestUserCreation(t *testing.T) {
 				t.Errorf("got name %q want %q", gotUser.fullname, test.userName)
 			}
 
-			if gotUser.email != test.userEmail {
-				t.Errorf("got email %q want %q", gotUser.email, test.userEmail)
+			wantEmail := parseEmail(t, test.userEmail)
+			if gotUser.email != wantEmail {
+				t.Errorf("got email %q want %q", gotUser.email, wantEmail)
 			}
 
 			if !authorizer.HashMatchesPassword(gotUser.hashedPassword, test.userPassword) {
 				t.Errorf("got hashed password %q that doesn't match password %q", gotUser.hashedPassword, test.userPassword)
 			}
 		})
+	}
+}
+
+func TestUserCreationFailsOnFailedPasswordHashing(t *testing.T) {
+	usersManager := manager.New(&explodingAuthorizer{}, newUsersStorage())
+	_, err := usersManager.CreateUser("test@test.com", "whatever", "pass")
+	if err == nil {
+		t.Fatal("expected an error, got none")
 	}
 }
 
@@ -128,6 +151,27 @@ func (s *UsersStorage) AddUser(email users.Email, fullname string, pass string) 
 func (s *UsersStorage) userByID(id string) (User, bool) {
 	v, ok := s.users[id]
 	return v, ok
+}
+
+type explodingAuthorizer struct{}
+
+func (*explodingAuthorizer) PasswordHash(string) (string, error) {
+	return "", errors.New("injected error from explodingAuthorizer")
+}
+
+func (*explodingAuthorizer) HashMatchesPassword(saltedhash string, password string) bool {
+	return false
+}
+
+func parseEmail(t *testing.T, email string) users.Email {
+	t.Helper()
+
+	s, err := users.ParseEmail(email)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return s
 }
 
 func hashedPassword(t *testing.T, a *auth.Authorizer, pass string) string {
