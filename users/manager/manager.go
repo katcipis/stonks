@@ -60,6 +60,9 @@ func (m *Manager) CreateUser(email users.Email, fullname string, password string
 	if fullname == "" {
 		return "", fmt.Errorf("%w:empty name", users.InvalidUserParamErr)
 	}
+	if password == "" {
+		return "", fmt.Errorf("%w:empty password", users.InvalidUserParamErr)
+	}
 	hashed, _ := m.auth.PasswordHash(password)
 	// TODO handle password hash generation failures
 	return m.store.AddUser(email, fullname, hashed)

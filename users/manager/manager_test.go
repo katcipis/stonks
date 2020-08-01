@@ -40,6 +40,13 @@ func TestUserCreation(t *testing.T) {
 			userPassword: "admin password",
 			wantErr:      users.InvalidUserParamErr,
 		},
+		{
+			name:         "FailureOnEmptyPassword",
+			userName:     "Name",
+			userEmail:    "user@test.com",
+			userPassword: "",
+			wantErr:      users.InvalidUserParamErr,
+		},
 	}
 
 	for _, test := range tests {
