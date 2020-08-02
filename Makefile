@@ -1,5 +1,8 @@
 goversion=1.14.6
 golangci_lint_version=1.29
+short_sha=$(shell git rev-parse --short HEAD)
+version?=$(short_sha)
+img=katcipis/users-manager:$(version)
 vols=-v `pwd`:/app -w /app
 run_go=docker run --rm $(vols) golang:$(goversion)
 run_lint=docker run --rm $(vols) golangci/golangci-lint:v$(golangci_lint_version)
@@ -29,7 +32,7 @@ test-integration: cleanup
 .PHONY: run
 run: cleanup
 	docker-compose build && \
-	docker-compose run user-manager && \
+	docker-compose run users-manager && \
 	docker-compose down -v
 
 .PHONY: coverage
@@ -46,6 +49,10 @@ shell:
 	docker-compose build && \
 	docker-compose run dev && \
 	docker-compose down
+
+.PHONY: image
+image:
+	docker build -t $(img) --build-arg GOVERSION=$(goversion) .
 
 .PHONY: cleanup
 cleanup:

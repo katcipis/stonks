@@ -4,6 +4,7 @@ package api_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -94,7 +95,10 @@ func TestUserCreation(t *testing.T) {
 			const dbuser = "testing"
 			const dbpass = "testing"
 
-			usersStorage, err := storage.New(dbhost, dbname, dbuser, dbpass)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+
+			usersStorage, err := storage.New(ctx, dbhost, dbname, dbuser, dbpass)
 			assertNoErr(t, err)
 
 			authorizer := auth.New()

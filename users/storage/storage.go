@@ -19,17 +19,21 @@ type Storage struct {
 
 // New creates a new Storage given the database address,user
 // and the password to securely connect to it.
-func New(host string, database string, user string, password string) (*Storage, error) {
-	const timeout = 10 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	pgconfig := fmt.Sprintf("postgres://%s:%s@%s:5432/%s", user, password, host, database)
-	pool, err := pgxpool.Connect(ctx, pgconfig)
-	if err != nil {
-		return nil, fmt.Errorf("error connecting to database: %v", err)
+// It automatically tries again to connect if something goes wrong
+// until the given ctx is cancelled or achieves its deadline.
+func New(ctx context.Context, host string, database string, user string, password string) (*Storage, error) {
+	var err error
+	// ad-hoc try again with no exponential backoff, was in a hurry at this point =P
+	for ctx.Err() == nil {
+		pgconfig := fmt.Sprintf("postgres://%s:%s@%s:5432/%s", user, password, host, database)
+		pool, err := pgxpool.Connect(ctx, pgconfig)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
+		return &Storage{connPool: pool}, nil
 	}
-	return &Storage{connPool: pool}, nil
+	return nil, fmt.Errorf("stopping to retry connecting to database, connect error: %v cancellation: %v", err, ctx.Err())
 }
 
 // AddUser adds a user with the given parameters, returning its ID in the case
