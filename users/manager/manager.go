@@ -73,5 +73,5 @@ func (m *Manager) CreateUser(ctx context.Context, email string, fullname string,
 	if err != nil {
 		return "", fmt.Errorf("error creating password hash:%v", err)
 	}
-	return m.store.AddUser(context.Background(), validEmail, fullname, hashed)
+	return m.store.AddUser(ctx, validEmail, fullname, hashed)
 }
