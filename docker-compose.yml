@@ -1,6 +1,17 @@
 version: '3.8'
 
 services:
+    user-manager:
+        build:
+          context: .
+          dockerfile: ./Dockerfile
+          args:
+            GOVERSION: "${goversion}"
+        ports:
+            - "8080:8080"
+        depends_on:
+            - usersdb
+
     dev:
         build:
           context: .
@@ -9,8 +20,6 @@ services:
             GOVERSION: "${goversion}"
         volumes:
             - .:/app
-        ports:
-            - "8080:8080"
         depends_on:
             - usersdb
 

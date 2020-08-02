@@ -26,6 +26,12 @@ test-integration: cleanup
 	docker-compose run dev $(gotests) -tags integration && \
 	docker-compose down -v
 
+.PHONY: run
+run: cleanup
+	docker-compose build && \
+	docker-compose run user-manager && \
+	docker-compose down -v
+
 .PHONY: coverage
 coverage: test-integration
 	@$(run_go) go tool cover -html=$(cov) -o=$(covhtml)
