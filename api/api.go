@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/katcipis/stonks/users"
 	"github.com/katcipis/stonks/users/manager"
 )
@@ -44,12 +46,17 @@ type Config struct {
 
 // New creates a new HTTP handler with all the service routes.
 func New(usersManager *manager.Manager, cfg Config) http.Handler {
+	const usersPath = "/v1/users"
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/users", func(res http.ResponseWriter, req *http.Request) {
+	userslog := log.WithFields(log.Fields{"path": usersPath})
+
+	mux.HandleFunc(usersPath, func(res http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			res.WriteHeader(http.StatusMethodNotAllowed)
 			msg := fmt.Sprintf("method %q is not allowed", req.Method)
 			res.Write(errorResponse(msg))
+			userslog.WithFields(log.Fields{"error": msg}).Warning("method not allowed")
 			return
 		}
 		dec := json.NewDecoder(req.Body)
@@ -60,6 +67,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 			msg := fmt.Sprintf("error parsing JSON request body: %v", err)
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write(errorResponse(msg))
+			userslog.WithFields(log.Fields{"error": msg}).Warning("invalid request body")
 			return
 		}
 
@@ -83,15 +91,16 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 				// operational trace (instead of stack traces).
 				// But I never tried it yet.
 				res.Write(errorResponse(err.Error()))
+				userslog.WithFields(log.Fields{"error": err.Error()}).Warning("invalid user params")
 				return
 			}
-			// TODO: log err
 			// Specially when you can't give much detail on errors for
 			// security reasons it would be a good idea to have
 			// a tracking id for errors to help map the error to
 			// the logs, not sure if I'm going to have time to add this.
 			res.WriteHeader(http.StatusInternalServerError)
 			res.Write(errorResponse("internal error trying to create user"))
+			userslog.WithFields(log.Fields{"error": err.Error()}).Error("internal server error")
 			return
 		}
 
