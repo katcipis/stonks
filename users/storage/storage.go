@@ -23,5 +23,5 @@ func (s *Storage) AddUser(
 	fullname string,
 	hashedPassword string,
 ) (string, error) {
-	return "", nil
+	return "TODO:FORNOW:-)", nil
 }

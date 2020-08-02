@@ -3,6 +3,7 @@ package api_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -96,12 +97,9 @@ func TestUserCreation(t *testing.T) {
 			}
 
 			if test.wantStatusCode != http.StatusCreated {
-				dec := json.NewDecoder(res.Body)
 				wantErr := api.ErrorResponse{}
-				err := dec.Decode(&wantErr)
-				if err != nil {
-					t.Fatal(err)
-				}
+				fromJSON(t, res.Body, &wantErr)
+
 				// Validate that a message is sent, but not its contents
 				// since the message is for human inspection only and
 				// should be handled opaquely by code.
@@ -115,6 +113,12 @@ func TestUserCreation(t *testing.T) {
 				return
 			}
 
+			wantSuccess := api.CreateUserResponse{}
+			fromJSON(t, res.Body, &wantSuccess)
+			if wantSuccess.ID == "" {
+				t.Fatal("wanted created user ID on response, got none")
+			}
+
 			// TODO: check on storage if the user has been created
 			// WHY: Users storage integrated with postgres is tested
 			// only through here, usually I wound add some tests to the
@@ -122,6 +126,16 @@ func TestUserCreation(t *testing.T) {
 			// short and I would like to have at least login/listing done too
 			// besides user creation.
 		})
+	}
+}
+
+func fromJSON(t *testing.T, data io.Reader, v interface{}) {
+	t.Helper()
+
+	dec := json.NewDecoder(data)
+	err := dec.Decode(&v)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

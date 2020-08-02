@@ -20,6 +20,10 @@ type CreateUserRequestBody struct {
 	Password string `json:"password`
 }
 
+type CreateUserResponse struct {
+	ID string `json:"id"`
+}
+
 // Error contains error information used in error responses
 type Error struct {
 	Message string `json:"message"`
@@ -51,7 +55,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 		defer cancel()
 
 		// TODO: test created user ID
-		_, err := usersManager.CreateUser(ctx, parsedReq.Email, parsedReq.FullName, parsedReq.Password)
+		userID, err := usersManager.CreateUser(ctx, parsedReq.Email, parsedReq.FullName, parsedReq.Password)
 		if err != nil {
 			if errors.Is(err, users.InvalidUserParamErr) {
 				res.WriteHeader(http.StatusBadRequest)
@@ -81,16 +85,19 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 		}
 
 		res.WriteHeader(http.StatusCreated)
-		// TODO: send body
-
+		res.Write(jsonResponse(CreateUserResponse{ID: userID}))
 	})
 	return mux
 }
 
 func errorResponse(message string) []byte {
-	// TODO: log err
-	res, _ := json.Marshal(ErrorResponse{
+	return jsonResponse(ErrorResponse{
 		Error: Error{Message: message},
 	})
+}
+
+func jsonResponse(v interface{}) []byte {
+	// TODO: handle and log err
+	res, _ := json.Marshal(v)
 	return res
 }
