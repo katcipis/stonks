@@ -9,7 +9,7 @@ require (
 	github.com/gomodule/redigo v1.8.2 // indirect
 	github.com/gorilla/mux v1.7.4 // indirect
 	github.com/jackc/pgconn v1.6.4
-	github.com/jackc/pgx v3.6.2+incompatible
+	github.com/jackc/pgx v3.6.2+incompatible // indirect
 	github.com/jackc/pgx/v4 v4.8.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/yuin/gopher-lua v0.0.0-20200603152657-dc2b0ca8b37e // indirect
