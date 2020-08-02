@@ -116,6 +116,11 @@ func TestUserCreation(t *testing.T) {
 			}
 
 			// TODO: check on storage if the user has been created
+			// WHY: Users storage integrated with postgres is tested
+			// only through here, usually I wound add some tests to the
+			// storage itself (integration ones too) but time is running
+			// short and I would like to have at least login/listing done too
+			// besides user creation.
 		})
 	}
 }
