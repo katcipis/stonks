@@ -76,11 +76,12 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 
 		userID, err := usersManager.CreateUser(ctx, parsedReq.Email, parsedReq.FullName, parsedReq.Password)
 		if err != nil {
-			if errors.Is(err, users.InvalidUserParamErr) {
+			if errors.Is(err, users.InvalidUserParamErr) ||
+				errors.Is(err, users.UserAlreadyExistsErr) {
 				res.WriteHeader(http.StatusBadRequest)
-				// Invalid user param errors are guaranteed
-				// to be safe to send to users. If a service is
-				// external care must be taken to not leak details
+				// Invalid and duplicated user param errors are guaranteed
+				// to be safe to send to users (not much info added on the error context).
+				// If a service is external care must be taken to not leak details
 				// that can be a potential security threat.
 				// When that is not the case I like the idea of
 				// informative error responses as detailed here:
@@ -91,7 +92,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 				// operational trace (instead of stack traces).
 				// But I never tried it yet.
 				res.Write(errorResponse(err.Error()))
-				userslog.WithFields(log.Fields{"error": err.Error()}).Warning("invalid user params")
+				userslog.WithFields(log.Fields{"error": err.Error()}).Warning("bad request error")
 				return
 			}
 			// Specially when you can't give much detail on errors for
@@ -99,7 +100,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 			// a tracking id for errors to help map the error to
 			// the logs, not sure if I'm going to have time to add this.
 			res.WriteHeader(http.StatusInternalServerError)
-			res.Write(errorResponse("internal error trying to create user"))
+			res.Write(errorResponse("internal server error"))
 			userslog.WithFields(log.Fields{"error": err.Error()}).Error("internal server error")
 			return
 		}

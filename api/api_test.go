@@ -32,6 +32,11 @@ func TestUserCreation(t *testing.T) {
 		wantStatusCode int
 	}
 
+	// These tests also depend on the order they run, besides being
+	// integrated with the actual database. It is possible to isolate
+	// each test and not depend on the order by creating one database
+	// per test and installing the schema on it, as part of a setup
+	// process, since I don't have much time I settled with this.
 	tests := []Test{
 		{
 			name: "Success",
@@ -41,6 +46,15 @@ func TestUserCreation(t *testing.T) {
 				Password: "weakpass",
 			}),
 			wantStatusCode: http.StatusCreated,
+		},
+		{
+			name: "FailsWhenUserWithSameEmailExists",
+			requestBody: toJSON(t, api.CreateUserRequestBody{
+				FullName: "DuplicatedEmail",
+				Email:    "stonks@corp.com",
+				Password: "weakpass",
+			}),
+			wantStatusCode: http.StatusBadRequest,
 		},
 		{
 			name: "FailsIfNameIsMissing",
@@ -53,7 +67,7 @@ func TestUserCreation(t *testing.T) {
 		{
 			name: "FailsIfEmailIsMissing",
 			requestBody: toJSON(t, api.CreateUserRequestBody{
-				FullName: "Success",
+				FullName: "Dude",
 				Password: "weakpass",
 			}),
 			wantStatusCode: http.StatusBadRequest,
@@ -61,7 +75,7 @@ func TestUserCreation(t *testing.T) {
 		{
 			name: "FailsIfPasswordIsMissing",
 			requestBody: toJSON(t, api.CreateUserRequestBody{
-				FullName: "Success",
+				FullName: "Stonks",
 				Email:    "stonks3@corp.com",
 			}),
 			wantStatusCode: http.StatusBadRequest,
@@ -75,10 +89,14 @@ func TestUserCreation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			const userDBAddr = "todo"
-			const userDBPass = "testing"
+			const dbhost = "usersdb"
+			const dbname = "testing"
+			const dbuser = "testing"
+			const dbpass = "testing"
 
-			usersStorage := storage.New(userDBAddr, userDBPass)
+			usersStorage, err := storage.New(dbhost, dbname, dbuser, dbpass)
+			assertNoErr(t, err)
+
 			authorizer := auth.New()
 			usersManager := manager.New(authorizer, usersStorage)
 
@@ -94,9 +112,7 @@ func TestUserCreation(t *testing.T) {
 			client := server.Client()
 
 			res, err := client.Do(request)
-			if err != nil {
-				t.Fatal(err)
-			}
+			assertNoErr(t, err)
 			defer res.Body.Close()
 
 			if res.StatusCode != test.wantStatusCode {
@@ -165,4 +181,11 @@ func newRequest(t *testing.T, method string, url string, body []byte) *http.Requ
 	}
 
 	return req
+}
+
+func assertNoErr(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
+	}
 }
