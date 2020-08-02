@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -45,16 +46,26 @@ type Config struct {
 func New(usersManager *manager.Manager, cfg Config) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/users", func(res http.ResponseWriter, req *http.Request) {
-		// TODO: test unsupported methods
+		if req.Method != http.MethodPost {
+			res.WriteHeader(http.StatusMethodNotAllowed)
+			msg := fmt.Sprintf("method %q is not allowed", req.Method)
+			res.Write(errorResponse(msg))
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		parsedReq := CreateUserRequestBody{}
-		// TODO: test invalid JSON on request
-		dec.Decode(&parsedReq)
+
+		err := dec.Decode(&parsedReq)
+		if err != nil {
+			msg := fmt.Sprintf("error parsing JSON request body: %v", err)
+			res.WriteHeader(http.StatusBadRequest)
+			res.Write(errorResponse(msg))
+			return
+		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.CreateUserTimeout)
 		defer cancel()
 
-		// TODO: test created user ID
 		userID, err := usersManager.CreateUser(ctx, parsedReq.Email, parsedReq.FullName, parsedReq.Password)
 		if err != nil {
 			if errors.Is(err, users.InvalidUserParamErr) {

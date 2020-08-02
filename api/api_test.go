@@ -64,6 +64,11 @@ func TestUserCreation(t *testing.T) {
 			}),
 			wantStatusCode: http.StatusBadRequest,
 		},
+		{
+			name:           "FailsIfRequestBodyIsNotJSON",
+			requestBody:    []byte(`{"oopsie not valid"\n\n`),
+			wantStatusCode: http.StatusBadRequest,
+		},
 	}
 
 	for _, test := range tests {
