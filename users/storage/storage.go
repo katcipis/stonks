@@ -69,5 +69,8 @@ func (s *Storage) AddUser(
 		return "", err
 	}
 	err = rows.Scan(&userID)
+	if err != nil {
+		return "", err
+	}
 	return strconv.FormatInt(userID, 10), nil
 }

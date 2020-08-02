@@ -20,9 +20,10 @@ import (
 type CreateUserRequestBody struct {
 	FullName string `json:"fullname"`
 	Email    string `json:"email"`
-	Password string `json:"password`
+	Password string `json:"password"`
 }
 
+// CreateUserResponse is the response body when a user is created with success
 type CreateUserResponse struct {
 	ID string `json:"id"`
 }
@@ -32,7 +33,7 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// Error response represents the response body
+// ErrorResponse represents the response body
 // of all requests that failed.
 type ErrorResponse struct {
 	Error Error `json:"error"`
@@ -55,7 +56,10 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 		if req.Method != http.MethodPost {
 			res.WriteHeader(http.StatusMethodNotAllowed)
 			msg := fmt.Sprintf("method %q is not allowed", req.Method)
-			res.Write(errorResponse(msg))
+			_, err := res.Write(errorResponse(msg))
+			if err != nil {
+				userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
+			}
 			userslog.WithFields(log.Fields{"error": msg}).Warning("method not allowed")
 			return
 		}
@@ -66,7 +70,10 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 		if err != nil {
 			msg := fmt.Sprintf("error parsing JSON request body: %v", err)
 			res.WriteHeader(http.StatusBadRequest)
-			res.Write(errorResponse(msg))
+			_, err := res.Write(errorResponse(msg))
+			if err != nil {
+				userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
+			}
 			userslog.WithFields(log.Fields{"error": msg}).Warning("invalid request body")
 			return
 		}
@@ -91,7 +98,10 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 				// I'm specially fond to the idea of a cross service
 				// operational trace (instead of stack traces).
 				// But I never tried it yet.
-				res.Write(errorResponse(err.Error()))
+				_, err := res.Write(errorResponse(err.Error()))
+				if err != nil {
+					userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
+				}
 				userslog.WithFields(log.Fields{"error": err.Error()}).Warning("bad request error")
 				return
 			}
@@ -100,13 +110,19 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 			// a tracking id for errors to help map the error to
 			// the logs, not sure if I'm going to have time to add this.
 			res.WriteHeader(http.StatusInternalServerError)
-			res.Write(errorResponse("internal server error"))
+			_, err := res.Write(errorResponse("internal server error"))
+			if err != nil {
+				userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
+			}
 			userslog.WithFields(log.Fields{"error": err.Error()}).Error("internal server error")
 			return
 		}
 
 		res.WriteHeader(http.StatusCreated)
-		res.Write(jsonResponse(CreateUserResponse{ID: userID}))
+		_, err = res.Write(jsonResponse(CreateUserResponse{ID: userID}))
+		if err != nil {
+			userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
+		}
 	})
 	return mux
 }
