@@ -32,7 +32,7 @@ test-integration: cleanup
 .PHONY: run
 run: cleanup
 	docker-compose build && \
-	docker-compose run users-manager && \
+	docker-compose up && \
 	docker-compose down -v
 
 .PHONY: coverage
