@@ -1,16 +1,20 @@
 version: '3.8'
 
 services:
-    devenv:
-        image: "${devimage}"
+    dev:
+        build:
+          context: .
+          dockerfile: ./hack/Dockerfile.dev
+          args:
+            GOVERSION: "${goversion}"
         volumes:
             - .:/app
         ports:
-            - 8080:8080
+            - "8080:8080"
         depends_on:
             - usersdb
 
     usersdb:
       build:
-          context: .
-          dockerfile: ./hack/Dockerfile.usersdb
+          context: ./hack
+          dockerfile: ./Dockerfile.usersdb

@@ -79,3 +79,15 @@ if you want:
 ```
 make image version=1.12.0
 ```
+
+## Debugging
+
+You can get an interactive shell inside the development environment
+running :
+
+```
+make shell
+```
+
+You will be able to test all services exported inside the environment
+network and some useful tools will be available to you, like psql.

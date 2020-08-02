@@ -1,0 +1,8 @@
+ARG GOVERSION
+
+FROM golang:${GOVERSION}
+
+RUN apt-get update && \
+    apt-get install -y postgresql-client
+
+WORKDIR /app
