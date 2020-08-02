@@ -1,9 +1,11 @@
 package manager_test
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/katcipis/stonks/auth"
 	"github.com/katcipis/stonks/users"
@@ -68,7 +70,10 @@ func TestUserCreation(t *testing.T) {
 			storage := newUsersStorage()
 			authorizer := auth.New()
 			usersManager := manager.New(authorizer, storage)
-			userID, err := usersManager.CreateUser(test.userEmail, test.userName, test.userPassword)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+
+			userID, err := usersManager.CreateUser(ctx, test.userEmail, test.userName, test.userPassword)
 
 			if test.wantErr != nil {
 				if !errors.Is(err, test.wantErr) {
@@ -94,13 +99,15 @@ func TestUserCreation(t *testing.T) {
 			if !authorizer.HashMatchesPassword(gotUser.hashedPassword, test.userPassword) {
 				t.Errorf("got hashed password %q that doesn't match password %q", gotUser.hashedPassword, test.userPassword)
 			}
+
+			assertValidDeadline(t, gotUser.ctx, ctx)
 		})
 	}
 }
 
 func TestUserCreationFailsOnFailedPasswordHashing(t *testing.T) {
 	usersManager := manager.New(&explodingAuthorizer{}, newUsersStorage())
-	_, err := usersManager.CreateUser("test@test.com", "whatever", "pass")
+	_, err := usersManager.CreateUser(context.Background(), "test@test.com", "whatever", "pass")
 	if err == nil {
 		t.Fatal("expected an error, got none")
 	}
@@ -114,6 +121,7 @@ type UsersStorage struct {
 
 // User is a user representation specific for test purposes
 type User struct {
+	ctx            context.Context
 	id             string
 	fullname       string
 	hashedPassword string
@@ -136,10 +144,11 @@ func newUsersStorage() *UsersStorage {
 	}
 }
 
-func (s *UsersStorage) AddUser(email users.Email, fullname string, pass string) (string, error) {
+func (s *UsersStorage) AddUser(ctx context.Context, email users.Email, fullname string, pass string) (string, error) {
 	s.idCount++
 	id := strconv.Itoa(s.idCount)
 	s.users[id] = User{
+		ctx:            ctx,
 		id:             id,
 		fullname:       fullname,
 		hashedPassword: pass,
@@ -172,4 +181,23 @@ func parseEmail(t *testing.T, email string) users.Email {
 	}
 
 	return s
+}
+
+func assertValidDeadline(t *testing.T, got context.Context, want context.Context) {
+	gotDeadline, ok := got.Deadline()
+	if !ok {
+		t.Fatalf("got ctx[%v] doesn't have deadline", got)
+	}
+	wantDeadline, ok := want.Deadline()
+	if !ok {
+		t.Fatalf("want ctx[%v] doesn't have deadline", want)
+	}
+
+	if gotDeadline.Equal(wantDeadline) {
+		return
+	}
+
+	if !gotDeadline.Before(wantDeadline) {
+		t.Fatalf("got deadline %v must be equal or before wanted deadline %v", gotDeadline, wantDeadline)
+	}
 }

@@ -3,6 +3,7 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/katcipis/stonks/users"
@@ -18,7 +19,7 @@ type UsersStore interface {
 	// - If any the user already exists: users.UserAlreadyExistsErr
 	//
 	// All other errors are to be considered internal errors.
-	AddUser(email users.Email, fullname string, hashedPassword string) (string, error)
+	AddUser(ctx context.Context, email users.Email, fullname string, hashedPassword string) (string, error)
 }
 
 // Authorizer is responsible for authorization and security related operations
@@ -56,7 +57,7 @@ func New(a Authorizer, s UsersStore) *Manager {
 // - If any the user already exists: users.UserAlreadyExistsErr
 //
 // All other errors are to be considered internal errors.
-func (m *Manager) CreateUser(email string, fullname string, password string) (string, error) {
+func (m *Manager) CreateUser(ctx context.Context, email string, fullname string, password string) (string, error) {
 	if fullname == "" {
 		return "", fmt.Errorf("%w:empty name", users.InvalidUserParamErr)
 	}
@@ -72,5 +73,5 @@ func (m *Manager) CreateUser(email string, fullname string, password string) (st
 	if err != nil {
 		return "", fmt.Errorf("error creating password hash:%v", err)
 	}
-	return m.store.AddUser(validEmail, fullname, hashed)
+	return m.store.AddUser(ctx, validEmail, fullname, hashed)
 }
