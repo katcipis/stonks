@@ -6,7 +6,8 @@ package users
 type Error string
 
 const (
-	InvalidUserParamErr Error = "user has invalid param"
+	InvalidUserParamErr  Error = "user has invalid param"
+	UserAlreadyExistsErr Error = "user already exists"
 )
 
 // Error returns the string representation of the error

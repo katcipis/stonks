@@ -1,0 +1,7 @@
+FROM postgres:12.3
+
+ENV POSTGRES_USER testing
+ENV POSTGRES_PASSWORD testing
+ENV POSTGRES_DB testing
+
+ADD usersdb-schema.sql /docker-entrypoint-initdb.d/

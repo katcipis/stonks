@@ -16,7 +16,7 @@ type UsersStore interface {
 	// The following errors MUST be returned (possibly wrapped)
 	// giving specific conditions:
 	//
-	// - If any the user already exists: users.UserAlreadyExistsErr
+	// - If the user already exists: users.UserAlreadyExistsErr
 	//
 	// All other errors are to be considered internal errors.
 	AddUser(ctx context.Context, email users.Email, fullname string, hashedPassword string) (string, error)

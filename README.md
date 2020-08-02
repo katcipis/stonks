@@ -79,3 +79,31 @@ if you want:
 ```
 make image version=1.12.0
 ```
+
+## Debugging
+
+You can get an interactive shell inside the development environment
+running :
+
+```
+make shell
+```
+
+You will be able to test all services exported inside the environment
+network and some useful tools will be available to you, like psql.
+
+## Running Locally
+
+If you want to explore a locally running version of the service integrated
+with all its dependencies (also locally) just run:
+
+```
+make run
+```
+
+And the service will be available at port 8080. You can test creating
+an user with curl for example:
+
+```sh
+curl http://localhost:8080/v1/users -X POST -d '{"fullname":"test", "email":"hi@test.com", "password":"pass"}'
+```
