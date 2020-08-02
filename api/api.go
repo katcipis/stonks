@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -56,10 +57,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 		if req.Method != http.MethodPost {
 			res.WriteHeader(http.StatusMethodNotAllowed)
 			msg := fmt.Sprintf("method %q is not allowed", req.Method)
-			_, err := res.Write(errorResponse(msg))
-			if err != nil {
-				userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
-			}
+			logResponseBodyWrite(userslog, res, errorResponse(msg))
 			userslog.WithFields(log.Fields{"error": msg}).Warning("method not allowed")
 			return
 		}
@@ -70,10 +68,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 		if err != nil {
 			msg := fmt.Sprintf("error parsing JSON request body: %v", err)
 			res.WriteHeader(http.StatusBadRequest)
-			_, err := res.Write(errorResponse(msg))
-			if err != nil {
-				userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
-			}
+			logResponseBodyWrite(userslog, res, errorResponse(msg))
 			userslog.WithFields(log.Fields{"error": msg}).Warning("invalid request body")
 			return
 		}
@@ -98,10 +93,7 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 				// I'm specially fond to the idea of a cross service
 				// operational trace (instead of stack traces).
 				// But I never tried it yet.
-				_, err := res.Write(errorResponse(err.Error()))
-				if err != nil {
-					userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
-				}
+				logResponseBodyWrite(userslog, res, errorResponse(err.Error()))
 				userslog.WithFields(log.Fields{"error": err.Error()}).Warning("bad request error")
 				return
 			}
@@ -110,21 +102,22 @@ func New(usersManager *manager.Manager, cfg Config) http.Handler {
 			// a tracking id for errors to help map the error to
 			// the logs, not sure if I'm going to have time to add this.
 			res.WriteHeader(http.StatusInternalServerError)
-			_, err := res.Write(errorResponse("internal server error"))
-			if err != nil {
-				userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
-			}
+			logResponseBodyWrite(userslog, res, errorResponse("internal server error"))
 			userslog.WithFields(log.Fields{"error": err.Error()}).Error("internal server error")
 			return
 		}
 
 		res.WriteHeader(http.StatusCreated)
-		_, err = res.Write(jsonResponse(CreateUserResponse{ID: userID}))
-		if err != nil {
-			userslog.WithFields(log.Fields{"error": err}).Warning("writing response body")
-		}
+		logResponseBodyWrite(userslog, res, jsonResponse(CreateUserResponse{ID: userID}))
 	})
 	return mux
+}
+
+func logResponseBodyWrite(logger *log.Entry, w io.Writer, data []byte) {
+	_, err := w.Write(data)
+	if err != nil {
+		logger.WithFields(log.Fields{"error": err}).Warning("writing response body")
+	}
 }
 
 func errorResponse(message string) []byte {
